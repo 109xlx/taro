@@ -47,13 +47,15 @@ def get_spread(spread_id: str) -> dict | None:
             return spread
     return None
 
-SYSTEM_PROMPT = """你是一位温柔、有洞察力的塔罗师。请根据用户的提问、抽到的牌及其正逆位，给出温暖而有力量的解读。
+SYSTEM_PROMPT = """你是一位温柔、清晰、有洞察力的塔罗师。请严格按照牌阵位置和用户问题进行解读，避免空泛套话。
 
-解读要求：
-- 正位牌：侧重启示与可行建议，帮助用户看见方向与可能。
-- 逆位牌：侧重需要留意的调整与成长空间，语气温和，不制造恐惧或灾难感。
-- 结合牌阵整体脉络，回应用户的具体问题。
-- 每次解读控制在 3-5 句话，语言亲切、清晰、有支持感。"""
+请始终使用以下结构输出：
+一、结论：先用 2-4 句话直接回答用户的问题，给出明确倾向、核心判断和最重要的建议；不要只说‘一切皆有可能’。
+二、逐张解析：按用户抽牌顺序逐张解释，每张牌单独成段，必须写出‘位置、牌名、正位/逆位、在该位置代表什么、对用户的具体提示’。
+三、组合影响：说明牌与牌之间如何相互加强、削弱或转化；指出至少一组关键组合，并解释它如何改变整体含义。单张牌阵可明确说明不存在组合影响。
+四、行动建议：给出 2-3 条具体、可执行的建议，并说明需要留意的风险或限制。
+
+正位侧重资源、发展与可行行动；逆位侧重阻碍、失衡、延迟或需要调整的地方。语气温和但结论必须明确，不制造恐惧，不把占卜当成确定事实。不同牌阵必须尊重各自的位置语义和牌数。"""
 
 app = FastAPI(title="塔罗 AI 服务")
 
@@ -142,6 +144,14 @@ async def interpret(request: InterpretRequest):
     spread = get_spread(request.spread)
     if not spread:
         raise HTTPException(status_code=400, detail=f"不支持的牌阵：{request.spread}")
+
+    spread_methods = {
+        "single": "这是单张牌阵：深入解释这一张牌如何回应用户当前问题，不做组合分析。",
+        "three": "这是三张牌阵，依次是过去、现在、未来。请把三张牌串成因果和发展链，不要写成互不相关的单牌解释。",
+        "choice": "这是二选一牌阵：第1张是现状；第2、3张是选择A的优势和隐患；第4、5张是选择B的优势和隐患。比较收益、代价、风险和可承受程度，最后给出倾向性建议但不替用户做决定。",
+        "relationship": "这是关系牌阵：第1张是你眼中的自己；第2张是你眼中的对方；第3张是对方眼中的你；第4张是关系发展方向。重点分析第2张和第3张的认知落差、误解、互补和张力。",
+    }
+    spread_method = spread_methods.get(request.spread, "请按照当前牌阵的位置说明进行解读。")
     
     deck = load_cards()
     deck_by_id = {card["id"]: card for card in deck}
@@ -182,6 +192,7 @@ async def interpret(request: InterpretRequest):
     lines = [
         f"用户问题：{request.question}",
         f"牌阵：{spread['name']} - {spread['description']}",
+        f"牌阵专属解读方法：{spread_method}",
         "",
         "抽到的牌：",
     ]
@@ -194,7 +205,7 @@ async def interpret(request: InterpretRequest):
             f"  牌意：{card['meaning']}"
         )
     lines.append("")
-    lines.append("请结合牌阵的整体脉络，给出温暖而有力量的解读。")
+    lines.append("请严格按以下顺序输出：1.核心结论；2.逐张解析；3.牌面联动；4.行动建议。不要省略任何一张牌。")
     
     api_key = os.getenv("DEEPSEEK_API_KEY")
     if not api_key:
