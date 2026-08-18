@@ -187,7 +187,7 @@
     #fan-container .card-back::before,
     #fan-container .card-back::after { content:none !important; display:none !important; }
     #card-table { padding-top:42px; }
-    #reveal-area { margin-top:60px; }
+    #reveal-area { margin-top:28px; }
     #result-area { margin-top:72px; }
     #result-container.five-card-layout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:'. top .' 'lefttop center righttop' 'leftbottom . rightbottom'; align-items:start; }
     #result-container.five-card-layout > div:nth-child(1) { grid-area:center; }
@@ -196,6 +196,11 @@
     #result-container.five-card-layout > div:nth-child(4) { grid-area:righttop; }
     #result-container.five-card-layout > div:nth-child(5) { grid-area:rightbottom; }
     @media(max-width:700px){#result-container.five-card-layout{grid-template-columns:1fr 1fr;grid-template-areas:'top top' 'lefttop righttop' 'leftbottom rightbottom' 'center center';}}
+    @media(max-width:600px){
+      #fan-container{width:100vw;height:430px;overflow:visible}
+      #fan-container .card-back{width:42px;height:29px;min-width:42px;min-height:29px}
+      #card-table{width:100%;overflow:hidden}
+    }
     
     /* 进度指示器 */
     .progress-ring {
@@ -316,9 +321,7 @@
   </div>
 
   <script>
-    const API_URL = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
-      ? 'http://localhost:8000'
-      : window.location.origin;
+    const API_URL = 'http://localhost:8000';
     let currentSpread = null;
     let shuffledCards = [];
     let selectedCards = [];
@@ -452,7 +455,7 @@
       container.innerHTML = '';
       
       const total = shuffledCards.length;
-      const radius = 245;
+      const radius = window.innerWidth <= 600 ? 185 : 245;
       
       shuffledCards.forEach(function(card, i) {
         const wrapper = document.createElement('div');
