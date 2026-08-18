@@ -321,7 +321,10 @@
   </div>
 
   <script>
-    const API_URL = 'http://localhost:8000';
+    const API_URL =
+  window.location.protocol === 'file:'
+    ? 'http://localhost:8000'
+    : window.location.origin;
     let currentSpread = null;
     let shuffledCards = [];
     let selectedCards = [];
