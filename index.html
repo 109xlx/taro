@@ -297,6 +297,14 @@
       </div>
     </section>
 
+    <section id="shuffle-status" class="w-full max-w-xl mb-4 hidden">
+      <div class="glass rounded-2xl p-6 text-center">
+        <div class="progress-ring mx-auto mb-4"></div>
+        <p class="shimmer-text text-lg tracking-widest">正在洗牌……</p>
+        <p class="text-gray-500 text-xs mt-2">牌阵即将展开</p>
+      </div>
+    </section>
+
     <!-- 扇形牌区 -->
     <section id="card-table" class="w-full hidden">
       <div class="fan-container" id="fan-container"></div>
@@ -440,6 +448,14 @@
         return;
       }
 
+      // 进入第二阶段：隐藏问题和牌阵设置，只保留洗牌/牌桌区域
+      const questionSection = document.getElementById('question').closest('section');
+      questionSection.classList.add('hidden');
+      document.getElementById('spread-selector').classList.add('hidden');
+      document.getElementById('shuffle-status').classList.remove('hidden');
+      document.getElementById('card-table').classList.add('hidden');
+      document.getElementById('progress-area').classList.add('hidden');
+
       // 显示牌阵选择
       document.getElementById('spread-selector').classList.remove('hidden');
       
@@ -467,6 +483,7 @@
         // 渲染扇形牌
         renderFan();
         document.getElementById('card-table').classList.remove('hidden');
+        document.getElementById('shuffle-status').classList.add('hidden');
         document.getElementById('reveal-area').classList.add('hidden');
         document.getElementById('result-area').classList.add('hidden');
         
