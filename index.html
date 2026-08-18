@@ -190,6 +190,7 @@
     #reveal-area { margin-top:28px; }
     #result-area { margin-top:72px; }
     #interpretation-text { white-space:pre-wrap; line-height:1.9; text-align:left; }
+    .draw-hint { margin:0 auto 12px; max-width:560px; text-align:center; color:rgba(224,213,200,.72); font-size:13px; letter-spacing:.08em; line-height:1.8; }
     .selection-tray { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:190px; min-height:92px; padding:12px; display:flex; justify-content:center; align-items:center; gap:8px; border:1px solid rgba(190,190,205,.5); border-radius:14px; background:linear-gradient(145deg,rgba(125,130,150,.28),rgba(30,33,55,.7)); box-shadow:inset 0 0 24px rgba(255,255,255,.06),0 0 28px rgba(90,100,140,.2); z-index:200; }
     .selection-tray.empty::before { content:none; }
     .selection-slot { position:relative; width:32px; height:48px; border-radius:5px; background:url('card-back.png') center/cover no-repeat; border:1px solid rgba(245,220,154,.8); box-shadow:0 0 10px rgba(212,175,55,.28); }
@@ -312,6 +313,7 @@
 
     <!-- 扇形牌区 -->
     <section id="card-table" class="w-full hidden">
+      <p class="draw-hint">抽牌时，请让自己安静下来，把注意力放在问题与当前牌位上。</p>
       <div class="fan-container" id="fan-container"></div>
     </section>
 
@@ -657,7 +659,11 @@
         // 打字机效果显示解读
         const interpText = document.getElementById('interpretation-text');
         interpText.textContent = '';
-        typeText(interpText, data.interpretation, 30);
+        const formattedInterpretation = data.interpretation
+          .replace(/\s*(【[^】]+】)\s*/g, '\n\n$1\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+        typeText(interpText, formattedInterpretation, 30);
         
       } catch (err) {
         document.getElementById('loading').classList.add('hidden');
