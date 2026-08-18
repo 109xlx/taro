@@ -187,10 +187,10 @@
     #fan-container .card-back::before,
     #fan-container .card-back::after { content:none !important; display:none !important; }
     #card-table { padding-top:42px; }
-    #reveal-area { margin-top:28px; }
+    #reveal-area { margin-top:64px; }
     #result-area { margin-top:72px; }
     #interpretation-text { white-space:pre-wrap; line-height:1.9; text-align:left; }
-    .draw-hint { margin:0 auto 12px; max-width:560px; text-align:center; color:rgba(224,213,200,.72); font-size:13px; letter-spacing:.08em; line-height:1.8; }
+    .draw-hint { margin:0 auto 28px; max-width:560px; text-align:center; color:rgba(224,213,200,.72); font-size:13px; letter-spacing:.08em; line-height:1.8; }
     .selection-tray { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:190px; min-height:92px; padding:12px; display:flex; justify-content:center; align-items:center; gap:8px; border:1px solid rgba(190,190,205,.5); border-radius:14px; background:linear-gradient(145deg,rgba(125,130,150,.28),rgba(30,33,55,.7)); box-shadow:inset 0 0 24px rgba(255,255,255,.06),0 0 28px rgba(90,100,140,.2); z-index:200; }
     .selection-tray.empty::before { content:none; }
     .selection-slot { position:relative; width:32px; height:48px; border-radius:5px; background:url('card-back.png') center/cover no-repeat; border:1px solid rgba(245,220,154,.8); box-shadow:0 0 10px rgba(212,175,55,.28); }
@@ -240,6 +240,7 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
+    @media(max-width:390px){ #fan-container{height:350px} }
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -508,7 +509,7 @@
       container.appendChild(tray);
       
       const total = shuffledCards.length;
-      const radius = window.innerWidth <= 600 ? 145 : 245;
+      const radius = window.innerWidth <= 390 ? 132 : (window.innerWidth <= 600 ? 145 : 245);
       
       shuffledCards.forEach(function(card, i) {
         const wrapper = document.createElement('div');
