@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 塔罗占卜</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: 
+        radial-gradient(ellipse at 20% 20%, #1a0a2e 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, #0d1b3e 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, #12081f 0%, #050308 100%);
+      font-family: 'Noto Serif SC', serif;
+      overflow-x: hidden;
+      color: #e0d5c8;
+    }
+
+    /* 星空背景 */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      animation: twinkle var(--duration) ease-in-out infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--opacity); transform: scale(1); }
+      50% { opacity: 0.1; transform: scale(0.6); }
+    }
+
+    /* 玻璃效果 */
+    .glass {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* 牌背设计 - 神秘优雅 */
+    /* 牌背设计 */
+    .card-back {
+  width: 64px;
+  height: 104px;
+  border-radius: 8px;
+  background: radial-gradient(circle at 25% 20%, #ffe89a 0 1px, transparent 2px), radial-gradient(circle at 75% 72%, #d9b4ff 0 1px, transparent 2px), linear-gradient(145deg, #080a1c 0%, #171139 42%, #4a226f 78%, #11152e 100%);
+  background-image: url('card-back.jpg');
+  background-size: cover;
+  background-position: center;
+  outline: 1px solid rgba(245, 220, 154, 0.8);
+  border: 3px solid rgba(213,181,255,.45);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.card-back::before {
+  content: '✦';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  color: rgba(212, 175, 55, 0.4);
+}
+
+.card-back:hover {
+  transform: translateY(-15px) scale(1.1);
+  outline: 1px solid rgba(212, 175, 55, 0.6);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+  z-index: 100;
+}
+
+.card-back.selected {
+  outline: 1px solid rgba(212, 175, 55, 0.8);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4), 0 10px 30px rgba(212, 175, 55, 0.2);
+  transform: translateY(-22px) scale(1.08);
+  z-index: 100;
+}
+
+    /* 扇形容器 */
+    .fan-container {
+      position: relative;
+      width: 520px;
+      height: 520px;
+      margin: 0 auto;
+    }
+
+    /* 每张牌的位置 - 扇形散开 */
+    .card-wrapper {
+      position: absolute;
+      transform-origin: center center;
+      transition: all 0.5s ease;
+    }
+
+    /* 标题发光 */
+    .title-glow {
+      text-shadow: 0 0 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(155, 89, 182, 0.3);
+    }
+
+    /* 按钮样式 */
+    .btn-mystic {
+      background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(155,89,182,0.15));
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      transition: all 0.3s ease;
+      color: #e0d5c8;
+    }
+    .btn-mystic:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(212,175,55,0.3), rgba(155,89,182,0.3));
+      border-color: rgba(212, 175, 55, 0.6);
+      box-shadow: 0 0 24px rgba(212, 175, 55, 0.2);
+      transform: translateY(-2px);
+    }
+    .btn-mystic:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 翻牌动画 */
+    .card-flip {
+      perspective: 1000px;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+    }
+    .card-flip.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+    }
+    .card-front {
+      transform: rotateY(180deg);
+      background: linear-gradient(135deg, #2d1b4e, #1a0a2e);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    /* 加载动画 */
+    .shimmer-text {
+      background: linear-gradient(90deg, #d4af37, #c39bd3, #d4af37);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 2s linear infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    /* 解读区域 */
+    .interpretation-box {
+      border-left: 3px solid rgba(212, 175, 55, 0.5);
+      padding-left: 20px;
+    }
+
+    /* 隐藏/显示 */
+    .hidden { display: none !important; }
+
+    /* 覆盖翻牌组件的通用规则，确保牌阵牌背保持长方形 */
+    #fan-container .card-back { width:52px; height:36px; min-width:52px; min-height:36px; border-radius:7px; background:url('card-back.png') center/cover no-repeat !important; }
+    #fan-container .card-back.selected { transform:translateY(-22px) scale(1.08); }
+    #fan-container .card-back::before { content:''; position:absolute; left:50%; top:50%; width:22px; height:12px; border:1px solid rgba(235,210,255,.9); border-radius:80% 0 80% 0; transform:translate(-50%,-50%) rotate(45deg); box-shadow:0 0 10px #9b5de5; }
+    #fan-container .card-back::after { content:''; position:absolute; left:50%; top:50%; width:5px; height:5px; border-radius:50%; transform:translate(-50%,-50%); background:#ffe8a8; box-shadow:0 0 6px 2px #d4af37, -13px -9px 0 -2px #f6dda0, 14px 8px 0 -2px #d8b5ff; }
+    /* 使用用户提供的牌背图片时，关闭所有旧的眼睛/月亮/星星伪元素 */
+    #fan-container .card-back::before,
+    #fan-container .card-back::after { content:none !important; display:none !important; }
+    #card-table { padding-top:42px; }
+    #reveal-area { margin-top:60px; }
+    #result-area { margin-top:72px; }
+    #result-container.five-card-layout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:'. top .' 'lefttop center righttop' 'leftbottom . rightbottom'; align-items:start; }
+    #result-container.five-card-layout > div:nth-child(1) { grid-area:center; }
+    #result-container.five-card-layout > div:nth-child(2) { grid-area:lefttop; }
+    #result-container.five-card-layout > div:nth-child(3) { grid-area:leftbottom; }
+    #result-container.five-card-layout > div:nth-child(4) { grid-area:righttop; }
+    #result-container.five-card-layout > div:nth-child(5) { grid-area:rightbottom; }
+    @media(max-width:700px){#result-container.five-card-layout{grid-template-columns:1fr 1fr;grid-template-areas:'top top' 'lefttop righttop' 'leftbottom rightbottom' 'center center';}}
+    
+    /* 进度指示器 */
+    .progress-ring {
+      width: 60px;
+      height: 60px;
+      border: 3px solid rgba(212, 175, 55, 0.2);
+      border-top-color: #d4af37;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 星空背景 -->
+  <div class="stars" id="stars"></div>
+
+  <div class="relative z-10 min-h-screen flex flex-col items-center px-4 py-6">
+
+    <!-- 标题 -->
+    <header class="text-center mb-6">
+      <h1 class="text-4xl md:text-5xl font-semibold tracking-widest title-glow text-white mb-2" style="font-family: 'Cinzel', serif;">
+        AI 塔罗占卜
+      </h1>
+      <p class="text-gray-400 text-sm tracking-[0.3em]">Seek the wisdom within</p>
+    </header>
+
+    <!-- 输入区 -->
+    <section class="w-full max-w-xl mb-6">
+      <div class="glass rounded-2xl p-6">
+        <label class="block text-xs tracking-widest text-gray-400 uppercase mb-3">你的问题</label>
+        <textarea id="question" rows="2" placeholder="心中默念你的问题..." 
+          class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-500 resize-none text-base"></textarea>
+        
+        <div class="flex flex-col sm:flex-row gap-3 mt-4">
+          <button id="btn-shuffle" onclick="startShuffle()" class="btn-mystic flex-1 py-3 px-6 rounded-xl text-sm tracking-widest font-medium">
+            🔮 开始洗牌
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 牌阵选择 -->
+    <section id="spread-selector" class="w-full max-w-xl mb-4 hidden">
+      <div class="glass rounded-2xl p-4">
+        <p class="text-xs tracking-widest text-gray-400 uppercase mb-3">选择牌阵</p>
+        <div id="spread-buttons" class="flex flex-wrap gap-2 mb-4"></div>
+        
+        <!-- 牌阵介绍 -->
+        <div id="spread-info" class="border-t border-white/10 pt-4 hidden">
+          <h3 id="spread-info-name" class="text-mystic-gold text-lg mb-2"></h3>
+          <p id="spread-info-desc" class="text-gray-400 text-sm leading-relaxed"></p>
+          <div class="mt-3 flex items-center gap-2 text-xs text-gray-500">
+            <span>✦</span>
+            <span id="spread-info-count"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 进度提示 -->
+    <section id="progress-area" class="w-full max-w-xl mb-4 hidden">
+      <div class="glass rounded-2xl p-4 text-center">
+        <p class="text-mystic-gold text-lg mb-2">
+          <span id="spread-name">单张牌</span>
+        </p>
+        <p class="text-gray-500 text-sm">已选择 <span id="cards-selected" class="text-white">0</span> / <span id="cards-total">3</span> 张</p>
+      </div>
+    </section>
+
+    <!-- 扇形牌区 -->
+    <section id="card-table" class="w-full hidden">
+      <div class="fan-container" id="fan-container"></div>
+    </section>
+
+    <!-- 揭示按钮 -->
+    <section id="reveal-area" class="w-full max-w-xl mb-6 hidden text-center">
+      <button id="btn-reveal" onclick="revealCards()" class="btn-mystic py-3 px-8 rounded-xl text-sm tracking-widest font-medium">
+        ✨ 揭示命运
+      </button>
+    </section>
+
+    <!-- 结果区 -->
+    <section id="result-area" class="w-full max-w-3xl hidden">
+      <div class="glass rounded-2xl p-6 md:p-8">
+        <div id="loading" class="hidden text-center py-12">
+          <div class="progress-ring mx-auto mb-4"></div>
+          <p class="shimmer-text text-xl tracking-widest">解读中...</p>
+        </div>
+        
+        <div id="cards-result" class="hidden">
+          <div class="text-center mb-6">
+            <p class="text-xs tracking-widest text-gray-500 uppercase mb-2">你的问题</p>
+            <p id="question-display" class="text-gray-300 italic"></p>
+          </div>
+          
+          <div id="result-container" class="grid gap-6 mb-6"></div>
+          
+          <div class="border-t border-white/10 pt-6">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-yellow-400 text-lg">✦</span>
+              <h2 class="text-lg tracking-widest text-gray-200">塔罗解读</h2>
+            </div>
+            <div class="interpretation-box">
+              <p id="interpretation-text" class="text-gray-300 leading-loose text-base"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-8 text-center text-gray-600 text-xs tracking-widest">
+      <p>✦ 塔罗仅供参考，答案在你心中 ✦</p>
+    </footer>
+  </div>
+
+  <script>
+    const API_URL = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+      ? 'http://localhost:8000'
+      : window.location.origin;
+    let currentSpread = null;
+    let shuffledCards = [];
+    let selectedCards = [];
+    let spreads = [];
+
+    // 生成星空
+    (function createStars() {
+      const container = document.getElementById('stars');
+      for (let i = 0; i < 100; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 2 + 0.5;
+        star.style.cssText = `
+          width: ${size}px; height: ${size}px;
+          left: ${Math.random() * 100}%;
+          top: ${Math.random() * 100}%;
+          --opacity: ${Math.random() * 0.7 + 0.3};
+          --duration: ${Math.random() * 4 + 2}s;
+          animation-delay: ${Math.random() * 4}s;
+        `;
+        container.appendChild(star);
+      }
+    })();
+
+    // 加载牌阵
+    async function loadSpreads() {
+      try {
+        const res = await fetch(`${API_URL}/spreads`);
+        spreads = await res.json();
+        
+        const container = document.getElementById('spread-buttons');
+        container.innerHTML = spreads.map(s => `
+          <button onclick="selectSpread('${s.id}')" 
+            class="btn-mystic px-4 py-2 rounded-lg text-xs tracking-wider ${s.id === 'single' ? 'active' : ''}"
+            data-spread="${s.id}">
+            ${s.name}
+          </button>
+        `).join('');
+        
+        selectSpread('single');
+      } catch (err) {
+        console.error('加载牌阵失败:', err);
+      }
+    }
+
+    function selectSpread(spreadId) {
+  currentSpread = spreads.find(s => s.id === spreadId);
+  
+  // 更新按钮样式
+  document.querySelectorAll('#spread-buttons button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.spread === spreadId);
+    if (btn.dataset.spread === spreadId) {
+      btn.style.borderColor = 'rgba(212, 175, 55, 0.8)';
+      btn.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.3), rgba(155,89,182,0.3))';
+    } else {
+      btn.style.borderColor = 'rgba(212, 175, 55, 0.3)';
+      btn.style.background = '';
+    }
+  });
+  
+    // ===== 新增：立即更新进度显示 + 牌阵介绍 =====
+    if (currentSpread) {
+    // 更新进度数字
+    document.getElementById('spread-name').textContent = currentSpread.name;
+    document.getElementById('cards-total').textContent = currentSpread.cardCount;
+    document.getElementById('cards-selected').textContent = '0';
+    
+    // 显示牌阵介绍
+    document.getElementById('spread-info').classList.remove('hidden');
+    document.getElementById('spread-info-name').textContent = currentSpread.name;
+    document.getElementById('spread-info-desc').innerHTML = currentSpread.description.replace(/\n/g, '<br>');
+    document.getElementById('spread-info-count').textContent = '需抽取 ' + currentSpread.cardCount + ' 张牌';
+  }
+  // ==================================
+}
+
+    async function startShuffle() {
+      const question = document.getElementById('question').value.trim();
+      if (!question) {
+        document.getElementById('question').focus();
+        return;
+      }
+      
+      // 确保牌阵已加载
+      if (spreads.length === 0) {
+        await loadSpreads();
+      }
+      
+      if (!currentSpread) {
+        alert('牌阵加载失败，请刷新页面重试');
+        return;
+      }
+
+      // 显示牌阵选择
+      document.getElementById('spread-selector').classList.remove('hidden');
+      
+      // 开始洗牌
+      document.getElementById('btn-shuffle').textContent = '🔮 重新洗牌';
+      
+      try {
+        const res = await fetch(`${API_URL}/shuffle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        
+        const data = await res.json();
+        shuffledCards = data.shuffled;
+        selectedCards = [];
+        
+        // 显示进度
+        console.log('当前牌阵:', currentSpread);
+        document.getElementById('spread-name').textContent = currentSpread.name;
+        document.getElementById('cards-total').textContent = currentSpread.cardCount;
+        document.getElementById('cards-selected').textContent = '0';
+        document.getElementById('progress-area').classList.remove('hidden');
+        
+        // 渲染扇形牌
+        renderFan();
+        document.getElementById('card-table').classList.remove('hidden');
+        document.getElementById('reveal-area').classList.add('hidden');
+        document.getElementById('result-area').classList.add('hidden');
+        
+      } catch (err) {
+        alert('洗牌失败：' + err.message);
+      }
+    }
+
+    function renderFan() {
+      const container = document.getElementById('fan-container');
+      container.innerHTML = '';
+      
+      const total = shuffledCards.length;
+      const radius = 245;
+      
+      shuffledCards.forEach(function(card, i) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-wrapper';
+        
+        const angle = (i / total) * 360;
+        const rad = angle * Math.PI / 180;
+        
+        const x = Math.sin(rad) * radius;
+        const y = -Math.cos(rad) * radius;
+        
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = 'calc(50% + ' + x + 'px)';
+        wrapper.style.top = 'calc(50% + ' + y + 'px)';
+        // 让牌面沿圆周切线方向排列，保持自然的长方形牌型
+        wrapper.style.transform = 'translate(-50%, -50%) rotate(' + (angle + 180) + 'deg)';
+        
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card-back';
+        cardEl.dataset.index = i;
+        cardEl.dataset.cardId = card.card_id;
+        cardEl.onclick = function() { selectCard(i); };
+        
+        wrapper.appendChild(cardEl);
+        container.appendChild(wrapper);
+      });
+    }
+
+    function selectCard(index) {
+      if (selectedCards.length >= currentSpread.cardCount && !selectedCards.find(c => c.index === index)) {
+        return; // 已经选够了
+      }
+      
+      const cardEl = document.querySelector(`[data-index="${index}"]`);
+      const existing = selectedCards.find(c => c.index === index);
+      
+      if (existing) {
+        // 取消选择
+        selectedCards = selectedCards.filter(c => c.index !== index);
+        cardEl.classList.remove('selected');
+      } else {
+        // 添加选择
+        selectedCards.push({
+          index: index,
+          cardId: shuffledCards[index].card_id
+        });
+        cardEl.classList.add('selected');
+      }
+      
+      // 更新进度
+      document.getElementById('cards-selected').textContent = selectedCards.length;
+      
+      // 显示/隐藏揭示按钮
+      if (selectedCards.length === currentSpread.cardCount) {
+        document.getElementById('reveal-area').classList.remove('hidden');
+      } else {
+        document.getElementById('reveal-area').classList.add('hidden');
+      }
+    }
+
+    async function revealCards() {
+      const question = document.getElementById('question').value.trim();
+      
+      document.getElementById('reveal-area').classList.add('hidden');
+      document.getElementById('result-area').classList.remove('hidden');
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('cards-result').classList.add('hidden');
+      
+      try {
+        const res = await fetch(`${API_URL}/interpret`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: question,
+            spread: currentSpread.id,
+            selected_cards: selectedCards.map(c => c.cardId)
+          })
+        });
+        
+        if (!res.ok) {
+          throw new Error('解读失败');
+        }
+        
+        const data = await res.json();
+        
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('cards-result').classList.remove('hidden');
+        
+        document.getElementById('question-display').textContent = `"${data.question}"`;
+        
+        // 按用户点击顺序渲染，确保关系牌阵/三张牌中第一张就是用户先选的牌
+        if (Array.isArray(data.cards) && selectedCards.length) {
+          const selectedOrder = selectedCards.map(c => String(c.cardId));
+          data.cards.sort((a, b) => selectedOrder.indexOf(String(a.card_id)) - selectedOrder.indexOf(String(b.card_id)));
+        }
+
+        // 渲染结果牌
+        const container = document.getElementById('result-container');
+        const isThree = data.cards.length > 1;
+        container.className = data.cards.length === 5
+          ? 'five-card-layout gap-6'
+          : (isThree ? 'grid grid-cols-1 md:grid-cols-3 gap-6' : 'grid gap-6 max-w-sm mx-auto');
+        
+        container.innerHTML = data.cards.map((card, i) => `
+          <div class="glass rounded-xl p-6 text-center animate-fade-in" style="animation-delay: ${i * 0.2}s">
+            ${card.position ? `<div class="text-xs tracking-widest text-gray-500 uppercase mb-3">${card.position}</div>` : ''}
+            <div class="text-4xl mb-3">${card.orientation === 'upright' ? '☀' : '☽'}</div>
+            <h3 class="text-2xl text-white tracking-wide mb-1">${card.name}</h3>
+            <p class="text-gray-500 text-xs tracking-widest mb-4">${card.name_en}</p>
+            <span class="inline-block px-4 py-1 rounded-full text-sm tracking-widest mb-4 ${
+              card.orientation === 'upright' 
+                ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50' 
+                : 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
+            }">
+              ${card.orientation_label}
+            </span>
+            <div class="mb-3">
+              ${card.keywords.map(k => `<span class="inline-block px-2 py-0.5 rounded-full text-xs border border-white/10 bg-white/5 text-gray-400 mr-1 mb-1">${k}</span>`).join('')}
+            </div>
+            <p class="text-gray-400 text-sm leading-relaxed italic">${card.meaning}</p>
+          </div>
+        `).join('');
+        
+        // 打字机效果显示解读
+        const interpText = document.getElementById('interpretation-text');
+        interpText.textContent = '';
+        typeText(interpText, data.interpretation, 30);
+        
+      } catch (err) {
+        document.getElementById('loading').classList.add('hidden');
+        alert('解读失败：' + err.message);
+      }
+    }
+
+    function typeText(el, text, speed) {
+      let i = 0;
+      function step() {
+        if (i < text.length) {
+          el.textContent += text[i++];
+          setTimeout(step, speed);
+        }
+      }
+      step();
+    }
+
+    // 初始化加载牌阵
+    loadSpreads();
+  </script>
+</body>
+</html>
