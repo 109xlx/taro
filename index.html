@@ -196,11 +196,34 @@
     #result-container.five-card-layout > div:nth-child(4) { grid-area:righttop; }
     #result-container.five-card-layout > div:nth-child(5) { grid-area:rightbottom; }
     @media(max-width:700px){#result-container.five-card-layout{grid-template-columns:1fr 1fr;grid-template-areas:'top top' 'lefttop righttop' 'leftbottom rightbottom' 'center center';}}
-    @media(max-width:600px){
-      #fan-container{width:100vw;height:360px;overflow:visible}
-      #fan-container .card-back{width:38px;height:26px;min-width:38px;min-height:26px}
-      #card-table{width:100%;overflow:hidden}
-    }
+   @media(max-width:600px){
+  #fan-container{
+    width:100vw;
+    height:360px;
+    overflow:visible;
+  }
+
+  #fan-container .card-back{
+    width:38px;
+    height:26px;
+    min-width:38px;
+    min-height:26px;
+  }
+
+  #card-table{
+    width:100%;
+    overflow:hidden;
+  }
+
+  #fan-container .card-back:hover:not(.selected){
+    transform:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.5);
+  }
+
+  #fan-container .card-back.selected{
+    transform:translateY(-18px) scale(1.08);
+  }
+}
     
     /* 进度指示器 */
     .progress-ring {
