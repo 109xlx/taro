@@ -270,7 +270,7 @@
     </section>
 
     <!-- 牌阵选择 -->
-    <section id="spread-selector" class="w-full max-w-xl mb-4 hidden">
+    <section id="spread-selector" class="w-full max-w-xl mb-4">
       <div class="glass rounded-2xl p-4">
         <p class="text-xs tracking-widest text-gray-400 uppercase mb-3">选择牌阵</p>
         <div id="spread-buttons" class="flex flex-wrap gap-2 mb-4"></div>
@@ -496,7 +496,11 @@
         wrapper.style.left = 'calc(50% + ' + x + 'px)';
         wrapper.style.top = 'calc(50% + ' + y + 'px)';
         // 让牌面沿圆周切线方向排列，保持自然的长方形牌型
-        wrapper.style.transform = 'translate(-50%, -50%) rotate(' + (angle + 180) + 'deg)';
+        // 先将牌缩小隐藏，随后在约 1.8 秒内依次落位，保持节奏紧凑
+        wrapper.style.transform = 'translate(-50%, -50%) rotate(' + (angle + 180) + 'deg) scale(0.15)';
+        wrapper.style.opacity = '0';
+        wrapper.style.transition = 'transform .34s cubic-bezier(.2,.8,.25,1), opacity .22s ease';
+        wrapper.style.transitionDelay = Math.min(i * 22, 1750) + 'ms';
         
         const cardEl = document.createElement('div');
         cardEl.className = 'card-back';
@@ -506,6 +510,10 @@
         
         wrapper.appendChild(cardEl);
         container.appendChild(wrapper);
+        requestAnimationFrame(() => {
+          wrapper.style.transform = 'translate(-50%, -50%) rotate(' + (angle + 180) + 'deg) scale(1)';
+          wrapper.style.opacity = '1';
+        });
       });
     }
 
