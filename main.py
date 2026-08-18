@@ -7,6 +7,7 @@ from typing import Literal
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -107,7 +108,11 @@ class InterpretResponse(BaseModel):
 
 @app.get("/")
 async def root():
-    return "塔罗 AI 服务运行中"
+    return FileResponse(Path(__file__).parent / "index.html", media_type="text/html")
+
+@app.get("/card-back.png")
+async def card_back():
+    return FileResponse(Path(__file__).parent / "card-back.png", media_type="image/png")
 
 @app.get("/spreads")
 async def get_spreads():
